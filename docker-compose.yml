@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+
+  microservice2:
+    image: auth-service:latest
+    build: ./auth-service
+    ports:
+      - 50051:50051
+
+  microservice3:
+    image: order-service:latest
+    build: ./order-service
+    ports:
+      - 50053:50053
+    depends_on:
+      - rabbitmq
+    network_mode: bridge
+
+  microservice4:
+    image: product-service:latest
+    build: ./product-service
+    ports:
+      - 50052:50052
+    depends_on:
+      - rabbitmq
+    network_mode: bridge
+
+  microservice1:
+    image: api-gateway:latest
+    build: ./api-gateway
+    ports:
+      - 3001:3001
+    depends_on:
+      - rabbitmq
+      - microservice2
+      - microservice3
+      - microservice4
